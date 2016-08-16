@@ -4,7 +4,7 @@
 char board[X_MAX][Y_MAX];  //board for the game
 char turn; // u for user and c for cpu
 char user_symbol, cpu_symbol; 	//'X' or 'O' depending on whose turn is first
-
+int x_opt,y_opt;
 void initialise_board()	//initialise the board to start the game
 {
 	for(int x=0;x<X_MAX;x++)
@@ -26,6 +26,7 @@ void print_board()	//print the board
 		}
 		printf("\n");
 	}
+	printf("\n");
 }
 
 int fill_pos_in_board(int x, int y, char symbol)	//fill the (x,y) position in board if it is empty 
@@ -39,10 +40,10 @@ int fill_pos_in_board(int x, int y, char symbol)	//fill the (x,y) position in bo
 		return -1;
 }
 
-void user_turn()
+void user_turn()		//let the user take his turn
 {
 	int row,column;
-	printf("\n Enter the position in terms of row and column: ");
+	printf("\nEnter the position in terms of row and column: ");
 	scanf("%d%d",&row,&column);
 	if (fill_pos_in_board(row-1,column-1,user_symbol)==-1)
 	{
@@ -52,11 +53,7 @@ void user_turn()
 		
 }
 
-void cpu_turn()
-{
-}
-
-int has_won(char symbol) 	//returns 1 if the player with the symbol wins
+int has_won(char symbol) 	//returns 1 if the player with the symbol wins and 0 if the game is draw else -1
 {
 	for(int i=0;i<X_MAX;i++)
 	{
@@ -69,16 +66,99 @@ int has_won(char symbol) 	//returns 1 if the player with the symbol wins
 		return 1;
 	if(board[0][2]==symbol && board [1][1]==symbol && board[2][0]==symbol)
 		return 1;
+	for (int x=0;x<X_MAX;x++)
+		for(int y=0;y<Y_MAX;y++)
+			if (board[x][y]=='-')
+				return -1;
+			
 	return 0;
 	
 }
 
-void gameplay()
+int optimal_choice()		//gives the score for the present state of board (minimax algo.)
+{
+	int optimal_score=-2,temp2;
+	
+	if(has_won(user_symbol)!=-1)
+		return -1*has_won(user_symbol);
+	if(has_won(cpu_symbol)!=-1)
+		return has_won(cpu_symbol);
+	for (int x=0;x<X_MAX;x++)
+	{
+		for (int y=0;y<Y_MAX;y++)
+		{
+			if(board[x][y]=='-')
+			{
+				if(turn=='c')
+				{
+					board[x][y]=cpu_symbol;
+					turn='u';
+					temp2 = optimal_choice();
+					//printf("\n Score for %d and %d pos is %d \n",x,y,temp2);
+					if(temp2>=optimal_score || optimal_score==-2)
+					{
+						optimal_score=temp2;
+					}
+					board[x][y]='-';
+					turn='c';
+				}
+				else if(turn=='u')
+				{
+					board[x][y]=user_symbol;
+					turn='c';
+					temp2 = optimal_choice();
+					if(temp2<=optimal_score || optimal_score==-2)
+					{
+						optimal_score=temp2;
+					}
+					board[x][y]='-';
+					turn='u';
+				}	
+
+			}
+		}
+	}
+//print_board();
+return optimal_score;
+}
+
+
+void cpu_turn()		//lets cpu take the turn
+{
+int optimal_score=-1,temp2;
+int x_opt,y_opt;
+for (int x=0;x<X_MAX;x++)
+	{
+		for (int y=0;y<Y_MAX;y++)
+		{
+			if(board[x][y]=='-')
+			{
+				board[x][y]=cpu_symbol;
+				turn='u';
+				temp2 = optimal_choice();
+				//printf("\n Score for %d and %d pos is %d \n",x,y,temp2);
+				if(temp2>=optimal_score)
+				{
+					optimal_score=temp2;
+					x_opt=x;
+					y_opt=y;
+				}
+				board[x][y]='-';
+				turn='c';
+			}
+		}
+	}
+fill_pos_in_board(x_opt,y_opt,cpu_symbol);	
+}
+
+
+
+void gameplay()		//the main game function
 {
 	char ans;
 	initialise_board();
-	printf("\n Lets start the game!");
-	printf("\n Do you wanna take first turn? y/n: 	");
+	printf("\nLets start the game!");
+	printf("\nDo you wanna take first turn? y/n: 	");
 	scanf("%c",&ans);
 	if (ans=='y')
 	{	
@@ -93,15 +173,22 @@ void gameplay()
 		cpu_symbol='X';
 	}
 	print_board();
+	int temp;
 	while(1)
 	{
 		if (turn=='u')
 		{
 			user_turn();
-			print_board();
-			if (has_won(user_symbol))
+			print_board();	
+			temp=has_won(user_symbol);
+			if (temp==1)
 			{
-				printf("Congrats! You have won the game!");
+				printf("\nCongrats! You have won the game!\n");
+				break;
+			}
+			else if(temp==0)
+			{
+				printf("\nIts a draw!\n");
 				break;
 			}
 			turn='c';
@@ -110,9 +197,15 @@ void gameplay()
 		{
 			cpu_turn();
 			print_board();
-			if (has_won(cpu_symbol))
+			temp=has_won(cpu_symbol);
+			if (temp==1)
 			{
-				printf("Oops! You have lost the game!");
+				printf("\nOops! You have lost the game!\n");
+				break;
+			}
+			else if(temp==0)
+			{
+				printf("\nIts a draw!\n");
 				break;
 			}
 			turn='u';
