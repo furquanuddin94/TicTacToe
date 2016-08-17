@@ -160,6 +160,7 @@ void gameplay()		//the main game function
 	printf("\nLets start the game!");
 	printf("\nDo you wanna take first turn? y/n: 	");
 	scanf("%c",&ans);
+	getchar();
 	if (ans=='y')
 	{	
 		turn='u';
@@ -216,7 +217,15 @@ void gameplay()		//the main game function
 
 int main()
 {
-	gameplay();
+	char choice;
+	do
+	{
+		gameplay();
+		printf("\nWanna play again? y/n:	");
+		scanf("%c",&choice);
+		getchar();
+	}
+	while(choice=='y');
 	return 0;
 }
 
